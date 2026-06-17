@@ -307,3 +307,80 @@ def qam16_demodulation(sinal, f=FREQUENCIA_PORTADORA, A=NIVEL_ALTO, N=AMOSTRAS_P
                 melhor_simbolo = simbolo
         bits.append(list(melhor_simbolo))
     return bits
+
+
+###########################################
+# SELETOR DE CODIFICAÇÃO / MODULAÇÃO
+###########################################
+
+
+def coder(bits: list[int], tipo: str) -> list[float]:
+    """Despacha para nrz_polar / manchester / bipolar conforme 'tipo'."""
+    if tipo == "nrz_polar":
+        return nrz_polar(bits)
+    elif tipo == "manchester":
+        return manchester(bits)
+    elif tipo == "bipolar":
+        return bipolar(bits)
+    else:
+        raise ValueError(f"Tipo de codificação desconhecido: {tipo}")
+
+def decoder(sinal: list[float], tipo: str) -> list[int]:
+    """Despacha para o decodificador banda-base correspondente."""
+    if tipo == "nrz_polar":
+        return nrz_polar_decoder(sinal)
+    elif tipo == "manchester":
+        return manchester_decoder(sinal)
+    elif tipo == "bipolar":
+        return bipolar_decoder(sinal)
+    else:
+        raise ValueError(f"Tipo de codificação desconhecido: {tipo}")
+
+def modulator(bits, tipo: str, **params) -> np.ndarray:
+    """Despacha para ask/fsk/psk/qpsk/qam16."""
+    if tipo == "ask":
+        return ask_modulation(bits, **params)
+    elif tipo == "fsk":
+        return fsk_modulation(bits, **params)
+    elif tipo == "psk":
+        return psk_modulation(bits, **params)
+    elif tipo == "qpsk":
+        return qpsk_modulation(bits, **params)
+    elif tipo == "qam16":
+        return qam16_modulation(bits, **params)
+    else:
+        raise ValueError(f"Tipo de modulação desconhecido: {tipo}")
+
+def demodulator(sinal, tipo: str, **params) -> list[int]:
+    if tipo == "ask":
+        return ask_demodulation(sinal, **params)
+    elif tipo == "fsk":
+        return fsk_demodulation(sinal, **params)
+    elif tipo == "psk":
+        return psk_demodulation(sinal, **params)
+    elif tipo == "qpsk":
+        return qpsk_demodulation(sinal, **params)
+    elif tipo == "qam16":
+        return qam16_demodulation(sinal, **params)
+    else:
+        raise ValueError(f"Tipo de modulação desconhecido: {tipo}")
+
+
+###########################################
+# RUIDO
+###########################################
+
+"""
+O meio recebe o sinal em V/W e adiciona ruído gaussiano n(x, σ):
+"""
+
+def aplicar_ruido(sinal: list[float], x: float, sigma: float) -> list[float]:
+    """
+    Soma a cada amostra um ruído gaussiano de média x e desvio sigma.
+    """
+    # Gerar o ruído com o mesmo tamanho do sinal
+    ruido = np.random.normal(loc=x, scale=sigma, size=sinal.shape)
+
+    # Adicionar o ruído ao sinal
+    sinal_ruidoso = sinal + ruido
+    return sinal_ruidoso
