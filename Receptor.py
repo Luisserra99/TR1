@@ -56,16 +56,28 @@ def iniciar_recepcao(sinal, config):
 
     bits_enlace = list(bits)
 
-    # 2.2 Verificação e correção de  erros (paridade / checksum / CRC-32 / Hamming)
-    
-    '''
-    TODO: Caso exista essa função na camada de enlace, caso contrário corrijo colocando os if's para cada tipo de EDC
-    '''
-    
-    # Verificação de erros (paridade / checksum / CRC-32)
-    # Corrige erros (Hamming)
+    # 2.2 Verificação de erros (paridade / checksum / CRC-32)
+    # 2.3 Correção de erros (Hamming)
+    # Verifica se os dados estão corretos e remove os bits de controle de erros.
+    # O Hamming corrige 1 bit antes de remover os bits de paridade.
 
-    bits   = CamadaEnlace.remover_controle_erro(bits_enlace, config['tipo_edc']) 
+    tipo_edc = config['tipo_edc']
+    edc_ok = True
+    
+    if tipo_edc == 'Paridade':
+        edc_ok = CamadaEnlace.parity_check(bits)
+        bits = CamadaEnlace.parity_remove(bits)
+    elif tipo_edc == 'Checksum':
+        k = config['tamanho_checksum']
+        edc_ok = CamadaEnlace.checksum_check(bits, k)
+        bits = CamadaEnlace.checksum_remove(bits)
+    elif tipo_edc == 'CRC-32':
+        edc_ok = CamadaEnlace.crc32_check(bits)
+        bits = CamadaEnlace.crc32_remove(bits)
+    elif tipo_edc == 'Hamming':
+        bits = CamadaEnlace.hamming_correct(bits)
+        bits = CamadaEnlace.hamming_remove(bits)
+
     bits_enlace_erro_corrigidos = list(bits)
 
     # ==========================================
@@ -80,5 +92,6 @@ def iniciar_recepcao(sinal, config):
         "mensagem": mensagem,
         "bits_fisicos": bits_fisicos,
         "bits_enlace": bits_enlace,
-        "bits_enlace_erro_corrigidos": bits_enlace_erro_corrigidos
+        "bits_enlace_erro_corrigidos": bits_enlace_erro_corrigidos,
+        "edc_ok": edc_ok,
     }   
