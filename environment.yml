@@ -1,0 +1,17 @@
+name: tr1
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.10
+  - gtk3
+  - pygobject
+  - pycairo
+  - numpy
+  - matplotlib
+  # pip equivalente (caso prefira instalar via pip dentro do conda):
+  # - pip
+  # - pip:
+  #     - PyGObject
+  #     - pycairo
+  #     - numpy
+  #     - matplotlib

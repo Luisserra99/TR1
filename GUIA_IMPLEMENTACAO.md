@@ -94,15 +94,51 @@ O enunciado (Seção 2) exige entregar estes arquivos. Sugestão de responsabili
 
 ## 3. Ambiente e dependências
 
-```bash
-# Debian/Ubuntu — GTK3 + PyGObject
-sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0
-pip install pycairo PyGObject numpy matplotlib
+### 3.1 Pacotes de sistema (GTK3 + PyGObject) — via `apt`
 
-# Execução
+O `PyGObject`/`pycairo` são **bindings de sistema**: precisam vir do `apt` (instalá-los via `pip`
+falha sem as libs `-dev` do GObject). Instale-os primeiro:
+
+```bash
+# Debian/Ubuntu
+sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 python3-full
+```
+
+### 3.2 Ambiente Python — `venv`
+
+Distribuições recentes (Debian 12+/Ubuntu 24.04+) bloqueiam `pip install` no Python do sistema
+(erro `externally-managed-environment`, PEP 668). A solução **não** é `--break-system-packages`,
+e sim um **virtualenv**. Use `--system-site-packages` para que o venv enxergue o GTK instalado
+pelo `apt`:
+
+```bash
+# cria o venv herdando o python3-gi/GTK do sistema
+python3 -m venv --system-site-packages .venv
+source .venv/bin/activate
+
+# instala apenas as libs Python puro (nao precisam do apt)
+pip install -r requirements.txt   # numpy, matplotlib
+```
+
+> O `requirements.txt` lista só `numpy` e `matplotlib` de propósito — `PyGObject`/`pycairo`
+> vêm do `apt` (passo 3.1).
+>
+> **Alternativa (conda):** `conda env create -f environment.yml && conda activate tr1` instala
+> toda a stack GTK via `conda-forge`, sem depender do `apt`.
+
+### 3.3 Execução
+
+```bash
+source .venv/bin/activate     # se ainda nao estiver ativo
 python InterfaceGrafica.py    # abre a GUI
 # ou
 python Simulador.py           # execução direta (modo simulação/testes)
+```
+
+Para confirmar que o ambiente está OK:
+
+```bash
+python -c "import gi; gi.require_version('Gtk','3.0'); from gi.repository import Gtk; import cairo, numpy, matplotlib; print('ambiente OK')"
 ```
 
 > **Atenção:** NumPy/Matplotlib são permitidos apenas para manipular arrays e **plotar** sinais.
