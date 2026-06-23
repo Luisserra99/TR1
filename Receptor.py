@@ -22,6 +22,8 @@ def iniciar_recepcao(sinal, config):
         - 'bits_enlace_erro_corrigidos': A lista de bits após a correção de erros na camada de enlace (se aplicável).
     """
 
+    print("--- INICIANDO RECEPÇÃO ---")
+
     # ==========================================
     # 1. CAMADA FÍSICA
     # ==========================================
@@ -37,6 +39,7 @@ def iniciar_recepcao(sinal, config):
         bits = CamadaFisica.decoder(sinal, tipo_digital)
 
     bits_fisicos = list(bits)
+    print(f"Física: Demodulação/Decodificação concluída, obtidos {len(bits_fisicos)} bits.")
 
 
     # ==========================================
@@ -48,6 +51,7 @@ def iniciar_recepcao(sinal, config):
     tipo = config['tipo_enquadramento']
     quadros = CamadaEnlace.remover_enquadramento(bits, tipo)
     bits_enlace = [bit for quadro in quadros for bit in quadro]  # achatado, p/ exibição
+    print(f"Enlace: Desenquadramento concluído, obtidos {len(bits_enlace)} bits.")
 
     # 2.2 Verificação (paridade / checksum / CRC-32) e 2.3 Correção (Hamming), por quadro.
     # O Hamming corrige 1 bit antes de remover os bits de paridade.
@@ -62,6 +66,7 @@ def iniciar_recepcao(sinal, config):
         edc_ok = edc_ok and ok
 
     bits_enlace_erro_corrigidos = list(bits)
+    print(f"Enlace: Verificação e correção de erros concluídas, obtidos {len(bits_enlace_erro_corrigidos)} bits.")
 
     # ==========================================
     # 3. APLICAÇÃO DE REDE
@@ -69,7 +74,10 @@ def iniciar_recepcao(sinal, config):
     
     # 3.1 Conversão bits para texto
     # Agrupa os bits em bytes (8 bits) e reconstrói a mensagem original.
-    mensagem = utils.bits_para_texto(bits)
+    mensagem = utils.bits_para_texto(bits) 
+    print(f"Aplicação: Bits convertidos em texto, obtida a mensagem: '{mensagem}'.")
+
+    print("--- RECEPÇÃO FINALIZADA ---")
 
     return {
         "mensagem": mensagem,

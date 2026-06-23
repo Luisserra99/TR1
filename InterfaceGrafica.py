@@ -236,6 +236,8 @@ class JanelaSimulador(Gtk.Window):
             "tipo_edc": self.cmb_edc.get_active_text(),
             "tipo_modulacao_digital": self.cmb_dig.get_active_text(),
             "tipo_modulacao_analogica": self.cmb_por.get_active_text(),
+            "ruido_media": float(self.spin_x.get_value()),
+            "ruido_desvio": float(self.spin_sigma.get_value()),
         }
 
     def _aplicar_config_nos_widgets(self, cfg):
