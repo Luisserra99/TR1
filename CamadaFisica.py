@@ -1,5 +1,5 @@
 import numpy as np
-import utils.py as utils
+import utils
 
 AMOSTRAS_POR_BIT = 100
 NIVEL_ALTO = 1.5 # Volts
@@ -16,22 +16,22 @@ FREQUENCIA_PORTADORA = 2 # maximo permitido AMOSTRAS_POR_BIT//2
 Regra: bit 1 → +V; bit 0 → −V. Nível constante durante todo o tempo do bit.
 """
 
-def nrz_polar(bits: list[int]) -> list[float]:
+def nrz_polar(bits: list[int]) -> np.ndarray:
     """Codifica bits em NRZ-Polar: 1 -> +V, 0 -> -V."""
     sinal = []
     for bit in bits:
         if bit == 1:
-            sinal.extend([NIVEL_ALTO] )
+            sinal.extend([NIVEL_ALTO]* AMOSTRAS_POR_BIT )
         else:
-            sinal.extend([NIVEL_BAIXO] )
-    return sinal
+            sinal.extend([NIVEL_BAIXO]* AMOSTRAS_POR_BIT )
+    return np.array(sinal)
 
-def nrz_polar_decoder(sinal: list[float]) -> list[int]:
+def nrz_polar_decoder(sinal: np.ndarray) -> list[int]:
     """Amostra o sinal no meio de cada bit: nível > 0 -> 1, senão 0."""
     bits = []
     for i in range(0, len(sinal), AMOSTRAS_POR_BIT):
         # calcula a média das amostras do bit para lidar com ruído
-        media = sum(sinal[i:i + AMOSTRAS_POR_BIT]) / AMOSTRAS_POR_BIT
+        media = np.mean(sinal[i:i + AMOSTRAS_POR_BIT])
         if media > NIVEL_ZERO:
             bits.append(1)
         else:
@@ -44,7 +44,7 @@ Regra: XOR do bit com o clock. Convenção (IEEE 802.3): bit 1 = transição alt
 bit 0 = transição baixo→alto. Cada bit tem duas metades (meio-período).
 """
 
-def manchester(bits: list[int]) -> list[float]:
+def manchester(bits: list[int]) -> np.ndarray:
     """Cada bit vira duas metades planas com transição no meio do período.
     IEEE 802.3: bit 1 = alto→baixo; bit 0 = baixo→alto.
     Cada bit ocupa AMOSTRAS_POR_BIT amostras no total (metade em cada nível).
@@ -56,17 +56,17 @@ def manchester(bits: list[int]) -> list[float]:
             sinal.extend([NIVEL_ALTO] * metade + [NIVEL_BAIXO] * metade)
         else:
             sinal.extend([NIVEL_BAIXO] * metade + [NIVEL_ALTO] * metade)
-    return sinal
+    return np.array(sinal)
 
-def manchester_decoder(sinal: list[float]) -> list[int]:
+def manchester_decoder(sinal: np.ndarray) -> list[int]:
     """Identifica a transição no meio do bit para recuperar o valor.
     Compara a média da primeira metade com a segunda: alto→baixo = 1, baixo→alto = 0.
     """
     bits = []
     metade = AMOSTRAS_POR_BIT // 2
     for i in range(0, len(sinal), AMOSTRAS_POR_BIT):
-        primeira = sum(sinal[i:i + metade]) / metade
-        segunda = sum(sinal[i + metade:i + AMOSTRAS_POR_BIT]) / metade
+        primeira = np.mean(sinal[i:i + metade])
+        segunda = np.mean(sinal[i + metade:i + AMOSTRAS_POR_BIT])
         bits.append(1 if primeira > segunda else 0)
     return bits
 
@@ -76,7 +76,7 @@ Regra: bit 0 → 0; bit 1 → alterna entre +V e −V a cada ocorrência.
 """
 
 
-def bipolar(bits: list[int]) -> list[float]:
+def bipolar(bits: list[int]) -> np.ndarray:
     """0 -> 0V; 1 -> alterna +V / -V."""
     sinal = []
     #guarda o ultimo nível para alternar entre +V e -V
@@ -91,14 +91,14 @@ def bipolar(bits: list[int]) -> list[float]:
                 ultimo_nivel = NIVEL_ALTO
         else:
             sinal.extend([NIVEL_ZERO] * AMOSTRAS_POR_BIT)
-    return sinal
-
-def bipolar_decoder(sinal: list[float]) -> list[int]:
+    return np.array(sinal)
+    
+def bipolar_decoder(sinal: np.ndarray) -> list[int]:
     """Nível != 0 -> 1; nível == 0 -> 0 (usar limiar para o ruído)."""
     bits = []
     for i in range(0, len(sinal), AMOSTRAS_POR_BIT):
         # calcula a média das amostras do bit para lidar com ruído
-        media = sum(sinal[i:i + AMOSTRAS_POR_BIT]) / AMOSTRAS_POR_BIT
+        media = np.mean(sinal[i:i + AMOSTRAS_POR_BIT])
         if (media > (NIVEL_ALTO + NIVEL_ZERO) / 2) or (media < (NIVEL_BAIXO + NIVEL_ZERO) / 2):
             bits.append(1)
         else:
@@ -128,10 +128,12 @@ def ask_demodulation(sinal, f=FREQUENCIA_PORTADORA, A=NIVEL_ALTO, N=AMOSTRAS_POR
     bits = []
     t = np.arange(N) / N  # vetor de tempo para um bit
     portadora = A * np.sin(2 * np.pi * f * t)
+    # limiar = metade da energia do símbolo "1": dot(portadora,portadora) ≈ N*A²/2
+    limiar = N * A * A / 4
     for i in range(0, len(sinal), N):
         segmento = sinal[i:i + N]
         correlacao = np.dot(segmento, portadora)
-        bits.append(1 if correlacao > 0 else 0)
+        bits.append(1 if correlacao > limiar else 0)
     return bits
 
 
@@ -243,7 +245,8 @@ def qpsk_demodulation(sinal, f=FREQUENCIA_PORTADORA, A=NIVEL_ALTO, N=AMOSTRAS_PO
             bits.append([0, 0])
         else:
             bits.append([0, 1])
-    return bits
+    # achata pares -> list[int] plano (consistente com ask/fsk/psk)
+    return [b for par in bits for b in par]
 
 # 4. 16-QAM — Quadrature Amplitude Modulation
 """
@@ -306,7 +309,8 @@ def qam16_demodulation(sinal, f=FREQUENCIA_PORTADORA, A=NIVEL_ALTO, N=AMOSTRAS_P
                 menor_distancia = distancia
                 melhor_simbolo = simbolo
         bits.append(list(melhor_simbolo))
-    return bits
+    # achata quadribits -> list[int] plano (consistente com ask/fsk/psk)
+    return [b for quad in bits for b in quad]
 
 
 ###########################################
@@ -314,7 +318,7 @@ def qam16_demodulation(sinal, f=FREQUENCIA_PORTADORA, A=NIVEL_ALTO, N=AMOSTRAS_P
 ###########################################
 
 
-def coder(bits: list[int], tipo: str) -> list[float]:
+def coder(bits: list[int], tipo: str) -> np.ndarray:
     """Despacha para nrz_polar / manchester / bipolar conforme 'tipo'."""
     if tipo == "nrz_polar":
         return nrz_polar(bits)
@@ -325,7 +329,7 @@ def coder(bits: list[int], tipo: str) -> list[float]:
     else:
         raise ValueError(f"Tipo de codificação desconhecido: {tipo}")
 
-def decoder(sinal: list[float], tipo: str) -> list[int]:
+def decoder(sinal: np.ndarray, tipo: str) -> list[int]:
     """Despacha para o decodificador banda-base correspondente."""
     if tipo == "nrz_polar":
         return nrz_polar_decoder(sinal)
@@ -374,7 +378,7 @@ def demodulator(sinal, tipo: str, **params) -> list[int]:
 O meio recebe o sinal em V/W e adiciona ruído gaussiano n(x, σ):
 """
 
-def aplicar_ruido(sinal: list[float], x: float, sigma: float) -> list[float]:
+def aplicar_ruido(sinal: np.ndarray, x: float, sigma: float) -> np.ndarray:
     """
     Soma a cada amostra um ruído gaussiano de média x e desvio sigma.
     """
