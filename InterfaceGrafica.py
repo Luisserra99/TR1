@@ -38,7 +38,7 @@ import Receptor
 # ----------------------------------------------------------------------------------
 # Opções dos menus. As strings são EXATAMENTE as que o backend espera (senão dá erro).
 # ----------------------------------------------------------------------------------
-DIGITAIS = ["NRZ-Polar", "Manchester", "Bipolar", "nenhum"]
+DIGITAIS = ["NRZ-Polar", "Manchester", "Bipolar"]
 PORTADORAS = ["nenhum", "ASK", "FSK", "PSK", "QPSK", "16-QAM"]
 ENQUADRAMENTOS = ["Contagem de caracteres", "Inserção de bytes", "Inserção de bits", "nenhum"]
 EDCS = ["nenhum", "Paridade", "Checksum", "CRC-32", "Hamming"]
@@ -92,7 +92,7 @@ class JanelaSimulador(Gtk.Window):
         self.modo = modo                                  # "tx" ou "rx"
         papel = "Transmissor" if modo == "tx" else "Receptor"
         super().__init__(title=f"Simulador TR1 — {papel}")
-        self.set_default_size(1100, 660)
+        self.set_default_size(1000, 550)
         self.set_border_width(8)
 
         # Layout: painel de configuração à esquerda, painel de saídas à direita.
@@ -118,8 +118,8 @@ class JanelaSimulador(Gtk.Window):
             self._linha += 1
 
         # Campos de entrada.
-        self.entry_msg = Gtk.Entry(text="Olá, TR1! ação")
-        self.spin_quadro = Gtk.SpinButton.new_with_range(8, 512, 8)      # tam. máx. quadro (bits)
+        self.entry_msg = Gtk.Entry(text="Esse Trabalho merce um SS!!!")
+        self.spin_quadro = Gtk.SpinButton.new_with_range(8, 208, 8)      # tam. máx. quadro (bits)
         self.spin_quadro.set_value(64)
         self.spin_k = Gtk.SpinButton.new_with_range(4, 32, 4)            # k do checksum (bits)
         self.spin_k.set_value(8)
@@ -142,7 +142,7 @@ class JanelaSimulador(Gtk.Window):
         add("Modulação digital:", self.cmb_dig)
         add("Modulação portadora:", self.cmb_por)
         add("Ruído — média (x):", self.spin_x)
-        add("Ruído — desvio (σ):", self.spin_sigma)
+        add("Ruído — desvio padrão (σ):", self.spin_sigma)
 
         # Só o Transmissor tem o botão de enviar.
         if self.modo == "tx":
@@ -365,7 +365,7 @@ class JanelaSimulador(Gtk.Window):
 def main():
     parser = argparse.ArgumentParser(description="GUI do simulador de TR1 (TX ou RX).")
     parser.add_argument("--modo", "-m", required=True, choices=["tx", "rx"],
-                        help="papel desta instância: tx (transmissor) ou rx (receptor)")
+                        help="digite (--modo tx - para transmissor) ou (--modo rx - para receptor)")
     args = parser.parse_args()
 
     janela = JanelaSimulador(args.modo)
