@@ -43,40 +43,23 @@ def iniciar_recepcao(sinal, config):
     # 2. CAMADA DE ENLACE DE DADOS
     # ==========================================
 
-    # 2.1 Desenquadramento (contagem de caracteres / inserção de bytes / inserção de bits)
-    # Remove os cabeçalhos inseridos pelo TX e recupera os bits de dados.
+    # 2.1 Desenquadramento -> lista de quadros (cada um = payload + EDC/ECC).
+    # Remove as flags/cabeçalhos inseridos pelo TX e separa os quadros.
     tipo = config['tipo_enquadramento']
-    
-    if tipo == 'Contagem de caracteres':
-        bits = CamadaEnlace.deframing_char_count(bits)
-    elif tipo == 'Inserção de bytes':
-        bits = CamadaEnlace.deframing_byte_stuffing(bits)
-    elif tipo == 'Inserção de bits':
-        bits = CamadaEnlace.deframing_bit_stuffing(bits)
+    quadros = CamadaEnlace.remover_enquadramento(bits, tipo)
+    bits_enlace = [bit for quadro in quadros for bit in quadro]  # achatado, p/ exibição
 
-    bits_enlace = list(bits)
-
-    # 2.2 Verificação de erros (paridade / checksum / CRC-32)
-    # 2.3 Correção de erros (Hamming)
-    # Verifica se os dados estão corretos e remove os bits de controle de erros.
+    # 2.2 Verificação (paridade / checksum / CRC-32) e 2.3 Correção (Hamming), por quadro.
     # O Hamming corrige 1 bit antes de remover os bits de paridade.
-
     tipo_edc = config['tipo_edc']
+    k = config.get('tamanho_checksum', CamadaEnlace.TAMANHO_CHECKSUM_BITS)
+
+    bits = []
     edc_ok = True
-    
-    if tipo_edc == 'Paridade':
-        edc_ok = CamadaEnlace.parity_check(bits)
-        bits = CamadaEnlace.parity_remove(bits)
-    elif tipo_edc == 'Checksum':
-        k = config['tamanho_checksum']
-        edc_ok = CamadaEnlace.checksum_check(bits, k)
-        bits = CamadaEnlace.checksum_remove(bits)
-    elif tipo_edc == 'CRC-32':
-        edc_ok = CamadaEnlace.crc32_check(bits)
-        bits = CamadaEnlace.crc32_remove(bits)
-    elif tipo_edc == 'Hamming':
-        bits = CamadaEnlace.hamming_correct(bits)
-        bits = CamadaEnlace.hamming_remove(bits)
+    for quadro in quadros:
+        payload, ok = CamadaEnlace.verificar_e_remover_controle_erro(quadro, tipo_edc, k)
+        bits.extend(payload)
+        edc_ok = edc_ok and ok
 
     bits_enlace_erro_corrigidos = list(bits)
 
