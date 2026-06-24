@@ -27,7 +27,7 @@ from gi.repository import Gtk, GLib         # Gtk = widgets; GLib = volta p/ a t
 
 # Matplotlib embarcado no GTK (sem pyplot): Figure desenha; FigureCanvas vira um widget GTK.
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_gtk3agg import FigureCanvasGTK3Agg as FigureCanvas
+from matplotlib.backends.backend_gtk3cairo import FigureCanvasGTK3Cairo as FigureCanvas
 
 # Backend do simulador (camadas já implementadas).
 import utils
