@@ -1,0 +1,318 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[bottom=2cm,top=3cm,left=2.5cm,right=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[portuguese]{babel}
+\usepackage{graphicx}
+\usepackage{indentfirst}
+\usepackage{float}
+\usepackage{fancyhdr}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{setspace}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    citecolor=blue,
+}
+\urlstyle{same}
+
+% Cabeçalho/rodapé da disciplina.
+\pagestyle{fancy}
+\lhead{\textsc{Teleinformática e Redes 1}}
+\rhead{\textsc{\includegraphics[height=25pt]{unb1}}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\setlength\headheight{30pt}
+
+% Estilo para trechos de código curtos.
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+}
+
+% Caixa reservada para o grupo colar as capturas dos gráficos depois.
+\newcommand{\placeholdergrafico}[2]{%
+    \fbox{\begin{minipage}[c][#1][c]{0.95\linewidth}\centering
+    \textcolor{gray}{\textit{[Espaço reservado para o gráfico: #2]}}
+    \end{minipage}}%
+}
+
+\begin{document}
+
+% ==================================================================
+%  CAPA
+% ==================================================================
+\begin{titlepage}
+ \vfill
+  \begin{center}
+  \includegraphics[scale=0.5]{UNB.png}\\[6pt]
+   {\large \textbf{Universidade de Brasília}} \\
+   {\large \textbf{Departamento de Ciência da Computação}} \\
+   {\large \textbf{Teleinformática e Redes 1 --- CIC0235}} \\
+
+   \vfill
+
+   \Large{\textbf{Simulador TR1 --- Camadas Física e de Enlace}}\\
+
+   \vfill
+   \vspace{40pt}
+
+   \begin{center}
+   \large{Anna Luiza Novaes Jansen Silva --- 232024572}\\[2pt]
+   \large{João Pedro Borges Saraiva --- 231025280}\\[2pt]
+      \large{Luís Eduardo Curi Serra --- 251033574}\\\vfill
+   \textbf{\LARGE{Professor: Marcelo Antonio Marotta}}\\
+   \end{center}
+
+   \vfill
+   \textbf{\today}
+  \end{center}
+\end{titlepage}
+\newpage
+
+\setlength\parindent{18pt}
+\setstretch{1.02}
+
+% ==================================================================
+%  1. INTRODUÇÃO
+% ==================================================================
+\section{Introdução}
+
+O objetivo deste trabalho é \textbf{simular as camadas Física e de Enlace} de uma rede de
+computadores, reproduzindo todo o caminho de uma mensagem de texto desde a digitação no
+\textbf{transmissor (TX)} até a sua recuperação no \textbf{receptor (RX)}. O problema central
+é representar a informação como \emph{sinal elétrico} (valores de tensão/potência, V/W),
+transmiti-lo por um meio que insere \textbf{ruído gaussiano} e, ainda assim, recuperar a
+mensagem original por meio dos protocolos de enquadramento, detecção e correção de erros.
+
+O simulador foi desenvolvido em \textbf{Python 3}, sem bibliotecas prontas para os algoritmos
+centrais (CRC, Hamming, modulações): \texttt{NumPy} e \texttt{Matplotlib} são usados apenas
+para manipular vetores e plotar sinais~\cite{numpy,matplotlib}. O fluxo completo é:
+
+\begin{center}
+\small
+texto $\rightarrow$ bits $\rightarrow$ Enlace (EDC/ECC + enquadramento) $\rightarrow$
+Física (sinal V/W) $\rightarrow$ \fbox{meio com ruído $n(x,\sigma)$} $\rightarrow$
+Física RX $\rightarrow$ Enlace RX $\rightarrow$ bits $\rightarrow$ texto.
+\end{center}
+
+Em conformidade com a Figura~1 do enunciado~\cite{marotta_enunciado}, o TX e o RX são
+\textbf{processos separados}, executados como duas janelas gráficas independentes que se
+comunicam por um \textbf{socket TCP local}, o qual representa o meio de comunicação onde o
+ruído é aplicado.
+
+% ==================================================================
+%  2. IMPLEMENTAÇÃO
+% ==================================================================
+\section{Implementação}
+
+\subsection{Organização e arquitetura}
+
+O código foi modularizado em arquivos com responsabilidades bem definidas
+(Tabela~\ref{tab:arquitetura}). A comunicação entre camadas usa uma convenção única de dados:
+\textbf{bits} são listas de inteiros \texttt{0/1} (\texttt{list[int]}); o \textbf{sinal} é um
+\texttt{np.ndarray} de valores reais em V/W, com \texttt{AMOSTRAS\_POR\_BIT = 100} amostras por
+bit/símbolo. Para a interface escolher as técnicas em tempo de execução, cada camada expõe
+\textbf{despachantes} que mapeiam a string da GUI para a implementação correspondente
+(\texttt{coder}/\texttt{decoder} e \texttt{modulator}/\texttt{demodulator} na física;
+\texttt{adicionar\_controle\_erro} e \texttt{aplicar\_enquadramento} no enlace), evitando código
+duplicado.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Arquivo} & \textbf{Responsabilidade} \\
+\midrule
+\texttt{CamadaFisica.py}     & Modulação digital, por portadora, amostragem e ruído. \\
+\texttt{CamadaEnlace.py}     & Enquadramento, detecção (EDC) e correção (ECC) de erros. \\
+\texttt{Transmissor.py}      & Fluxo TX: texto $\rightarrow$ bits $\rightarrow$ enlace $\rightarrow$ física. \\
+\texttt{Receptor.py}         & Fluxo RX: sinal $\rightarrow$ física $\rightarrow$ enlace $\rightarrow$ texto. \\
+\texttt{InterfaceGrafica.py} & GUI GTK 3 + Matplotlib (TX e RX). \\
+\texttt{Simulador.py}        & Rotina que orquestra TX $\rightarrow$ meio $\rightarrow$ RX. \\
+\texttt{utils.py}            & Conversões base (int$\leftrightarrow$bits, texto$\leftrightarrow$bits, padding). \\
+\bottomrule
+\end{tabular}
+\caption{Organização dos módulos do simulador.}
+\label{tab:arquitetura}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\placeholdergrafico{5cm}{diagrama de blocos do simulador (Figura 1 adaptada: TX, meio, RX)}
+\caption{Diagrama de desenvolvimento adotado, com TX e RX em processos separados ligados pelo
+meio (socket TCP) onde o ruído é inserido.}
+\label{fig:diagrama}
+\end{figure}
+
+\subsection{Camada Física}
+
+A camada física converte os bits em sinal V/W (níveis $\pm 1{,}5$\,V). Foram implementadas as
+três \textbf{modulações digitais} (banda-base) e as cinco \textbf{modulações por portadora}
+exigidas:
+
+\begin{itemize}\itemsep1pt
+    \item \textbf{NRZ-Polar}: bit \texttt{1} $\rightarrow +V$; bit \texttt{0} $\rightarrow -V$.
+    \item \textbf{Manchester} (IEEE 802.3): transição no meio do bit (\texttt{1} = alto$\rightarrow$baixo; \texttt{0} = baixo$\rightarrow$alto).
+    \item \textbf{Bipolar (AMI)}: bit \texttt{0} $\rightarrow 0$\,V; bit \texttt{1} alterna $+V/-V$.
+    \item \textbf{ASK / FSK / PSK}: chaveamento de amplitude, frequência e fase de uma portadora senoidal.
+    \item \textbf{QPSK}: 2 bits por símbolo (4 fases); \textbf{16-QAM}: 4 bits por símbolo (constelação I/Q $4\times4$).
+\end{itemize}
+
+A demodulação é tolerante ao ruído: o banda-base decide pela \emph{média} das amostras do bit;
+ASK, FSK, PSK e QPSK usam \emph{correlação} com as portadoras de referência; o 16-QAM estima as
+componentes $I$ e $Q$ e escolhe o ponto da constelação de \emph{menor distância euclidiana}.
+
+\textbf{Cenário de teste:} Os testes são conduzidos com um efeito por vez, sempre será enviada a 
+palavra \textit{TR1!} para preservar o tamanho máximo de 40bits fixado no gráfico da interface gráfica,
+assim facilitando a visualização da informação. Adicionalmente vale notar que na implementação a modulação
+por portadora tem predominância sobre a modulação digital.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.32\textwidth}\centering\placeholdergrafico{3cm}{NRZ-Polar}\caption{NRZ-Polar}\end{subfigure}\hfill
+\begin{subfigure}{0.32\textwidth}\centering\placeholdergrafico{3cm}{Manchester}\caption{Manchester}\end{subfigure}\hfill
+\begin{subfigure}{0.32\textwidth}\centering\placeholdergrafico{3cm}{Bipolar/AMI}\caption{Bipolar (AMI)}\end{subfigure}
+\caption{Sinais das modulações digitais (banda-base).}
+\label{fig:digitais}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.32\textwidth}\centering\placeholdergrafico{2.6cm}{ASK}\caption{ASK}\end{subfigure}\hfill
+\begin{subfigure}{0.32\textwidth}\centering\placeholdergrafico{2.6cm}{FSK}\caption{FSK}\end{subfigure}\hfill
+\begin{subfigure}{0.32\textwidth}\centering\placeholdergrafico{2.6cm}{PSK}\caption{PSK}\end{subfigure}
+
+\vspace{4pt}
+\begin{subfigure}{0.32\textwidth}\centering\placeholdergrafico{2.6cm}{QPSK}\caption{QPSK}\end{subfigure}\hfill
+\begin{subfigure}{0.32\textwidth}\centering\placeholdergrafico{2.6cm}{16-QAM}\caption{16-QAM}\end{subfigure}\hfill
+\begin{subfigure}{0.32\textwidth}\centering\end{subfigure}
+\caption{Sinais das modulações por portadora.}
+\label{fig:portadoras}
+\end{figure}
+
+\subsection{Camada de Enlace}
+
+A camada de enlace opera sobre bits. No TX o pipeline é
+\emph{payload $\rightarrow$ adiciona EDC/ECC $\rightarrow$ enquadra}; no RX, o inverso. Foram
+implementados:
+
+\begin{itemize}\itemsep1pt
+    \item \textbf{Enquadramento}: (i) \emph{contagem de caracteres}, com cabeçalho de
+    \textbf{16 bits} indicando o tamanho do quadro; (ii) \emph{inserção de bytes} (byte
+    stuffing) com flag \texttt{0x7E} e escape \texttt{0x7D}; (iii) \emph{inserção de bits} (bit
+    stuffing), inserindo um \texttt{0} após cinco \texttt{1} consecutivos.
+    \item \textbf{Detecção (EDC)}: bit de \emph{paridade par}; \emph{checksum} por soma em
+    complemento de um com \emph{carry} circular; e \textbf{CRC-32} implementado manualmente por
+    divisão polinomial (gerador IEEE 802, \texttt{0x04C11DB7}), \emph{sem} usar \texttt{zlib}.
+    \item \textbf{Correção (ECC)}: código de \textbf{Hamming}, com bits de paridade nas posições
+    potência de 2; no RX, a síndrome localiza e corrige 1 bit invertido por quadro.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.48\textwidth}\centering\placeholdergrafico{3.2cm}{TX limpo vs RX com ruído --- Hamming corrige 1 bit/quadro}\caption{Hamming: corrige o erro (EDC \checkmark).}\end{subfigure}\hfill
+\begin{subfigure}{0.48\textwidth}\centering\placeholdergrafico{3.2cm}{TX limpo vs RX com ruído --- CRC-32 acusa erro}\caption{CRC-32: detecta o erro (EDC \texttimes).}\end{subfigure}
+\caption{Demonstração de detecção \emph{vs.} correção de erros sob ruído.}
+\label{fig:enlace}
+\end{figure}
+
+\subsection{Meio de comunicação e ruído}
+
+A função \texttt{aplicar\_ruido} soma a cada amostra do sinal um ruído gaussiano $n(x,\sigma)$
+gerado com \texttt{random.gauss} (biblioteca padrão), com média $x$ e desvio $\sigma$
+configuráveis na GUI. O ruído permite demonstrar, na prática, a atuação dos protocolos de
+detecção e correção.
+
+\subsection{Decisões de projeto e divergências do diagrama inicial}
+
+Durante a implementação, alguns pontos omissos no enunciado exigiram decisões de projeto, e o
+produto final divergiu em alguns aspectos do diagrama inicialmente esboçado:
+
+\begin{enumerate}\itemsep1pt
+    \item \textbf{Tamanho máximo do quadro fixado em 212 bits} (\texttt{TAMANHO\_QUADRO},
+    múltiplo de 8). O \emph{payload} é mantido separado do cabeçalho e do EDC/ECC dentro do
+    quadro, decisão que organizou o fatiamento da mensagem e o enquadramento.
+    \item \textbf{O cabeçalho de contagem conta bits, não caracteres} (16 bits), para casar com
+    o fato de todo o projeto trafegar a informação em bits.
+    \item \textbf{EDC ou ECC, nunca os dois simultaneamente} por quadro. A interface permite
+    escolher \emph{uma} técnica de detecção \emph{ou} a correção (Hamming), tornando-os
+    mutuamente exclusivos --- convenção definida pelo grupo para o caso omisso no enunciado.
+    \item \textbf{O ruído é aplicado fora do TX e do RX.} Diferentemente de uma leitura literal
+    do diagrama, o ruído não é inserido dentro de \texttt{Transmissor.py} nem
+    \texttt{Receptor.py}: ele é aplicado no \emph{canal} (lado do TX, imediatamente antes do
+    envio pelo socket), mantendo o transmissor e o receptor ``puros''.
+    \item \textbf{Meio implementado como socket TCP} (\texttt{127.0.0.1:5001}) e \textbf{GUI em
+    duas instâncias} (\texttt{--modo tx} e \texttt{--modo rx}), em vez de uma janela única. Essa
+    escolha materializa de forma clara o requisito de TX e RX como processos separados.
+\end{enumerate}
+
+\subsection{Uso de Inteligência Artificial}
+
+Por transparência, registra-se que o \textbf{guia inicial de construção} do projeto foi
+elaborado com auxílio de IA, com o intuito de \emph{deixar mais claro para o grupo} como
+dividir as tarefas e qual o passo a passo de desenvolvimento. A IA também foi usada para
+\textbf{montar casos de teste} das funções individuais das camadas de enlace e física e para
+\textbf{apontar possíveis erros de lógica}. Entretanto, \textbf{toda a lógica de implementação
+foi desenvolvida pelo grupo}: a IA não foi utilizada para corrigir erros --- apenas para
+identificar possíveis falhas de lógica, que foram \emph{depuradas e corrigidas pelos próprios
+integrantes}.
+
+% ==================================================================
+%  3. MEMBROS
+% ==================================================================
+\section{Membros e atividades}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Integrante} & \textbf{Atividades desenvolvidas} \\
+\midrule
+Luís Eduardo Curi Serra & Interface gráfica, camada física e correção de erros (Hamming, ECC). \\
+Anna Luiza Novaes Jansen Silva & Transmissor, simulador e enquadramento (quadros). \\
+João Pedro Borges Saraiva & Receptor e detecção de erros (paridade, checksum, CRC-32 --- EDC). \\
+\bottomrule
+\end{tabular}
+\caption{Divisão de atividades entre os membros do grupo.}
+\label{tab:membros}
+\end{table}
+
+% ==================================================================
+%  4. CONCLUSÃO
+% ==================================================================
+\section{Conclusão}
+
+O simulador atendeu aos requisitos do enunciado, transmitindo corretamente a mensagem através
+das camadas física e de enlace e demonstrando a detecção e a correção de erros sob ruído. A
+parte mais \textbf{difícil} foi o \emph{front-end} da interface gráfica, principalmente pela
+falta de conhecimento prévio do grupo em GTK e pelo esforço para deixá-la minimamente estética.
+A \textbf{camada física} mostrou-se objetiva e direta de implementar. Já a \textbf{camada de
+enlace} foi a mais desafiadora em termos de decisões de projeto --- em especial a escolha do
+tamanho dos quadros e se o \emph{payload} deveria ou não ser separado dentro do quadro.
+
+Como balanço geral, o trabalho \textbf{auxiliou bastante o grupo} a concretizar conceitos da
+camada de enlace que, até então, eram bastante abstratos, tornando tangíveis o enquadramento e
+os mecanismos de controle de erros vistos em sala~\cite{marotta_tr1,tanenbaum2011}.
+
+% ==================================================================
+%  REFERÊNCIAS
+% ==================================================================
+\bibliographystyle{plain}
+\bibliography{bib}
+
+\end{document}

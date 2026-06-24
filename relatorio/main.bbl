@@ -1,0 +1,27 @@
+\begin{thebibliography}{1}
+
+\bibitem{matplotlib}
+John~D. Hunter and {The Matplotlib Development Team}.
+\newblock {\em {Matplotlib: Visualization with Python --- Documentation}}, 2024.
+
+\bibitem{marotta_tr1}
+Marcelo~Antonio Marotta.
+\newblock {Teleinform\'atica e Redes 1 (CIC0235) --- Material e slides da disciplina}.
+\newblock Moodle / Aprender, Universidade de Bras\'ilia, 2025.
+\newblock Slides de Modula\c{c}\~ao, Enquadramento, Detec\c{c}\~ao e Corre\c{c}\~ao de erros.
+
+\bibitem{marotta_enunciado}
+Marcelo~Antonio Marotta.
+\newblock {Trabalho Final de Teleinform\'atica e Redes 1 --- Enunciado}.
+\newblock Universidade de Bras\'ilia, Departamento de Ci\^encia da Computa\c{c}\~ao, 2025.
+
+\bibitem{tanenbaum2011}
+Andrew~S. Tanenbaum and David~J. Wetherall.
+\newblock {\em Redes de Computadores}.
+\newblock Pearson Prentice Hall, 5 edition, 2011.
+
+\bibitem{numpy}
+{The NumPy Community}.
+\newblock {\em {NumPy Documentation}}, 2024.
+
+\end{thebibliography}
