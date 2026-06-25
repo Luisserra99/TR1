@@ -133,8 +133,8 @@ class JanelaSimulador(Gtk.Window):
         self.cmb_edc = self._combo(EDCS)
         self.cmb_dig = self._combo(DIGITAIS)
         self.cmb_por = self._combo(PORTADORAS)
-        self.spin_x = Gtk.SpinButton.new_with_range(-2.0, 2.0, 0.05)     # ruído: média
-        self.spin_sigma = Gtk.SpinButton.new_with_range(0.0, 3.0, 0.05)  # ruído: desvio
+        self.spin_x = Gtk.SpinButton.new_with_range(-10.0, 10.0, 0.05)     # ruído: média
+        self.spin_sigma = Gtk.SpinButton.new_with_range(0.0, 10.0, 0.05)  # ruído: desvio
         self.spin_x.set_digits(2)
         self.spin_sigma.set_digits(2)
         self.spin_x.set_value(0.0)
