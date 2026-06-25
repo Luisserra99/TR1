@@ -196,7 +196,10 @@ class JanelaSimulador(Gtk.Window):
                       ("Status EDC:", self.lbl_edc)]
         for rotulo, widget in linhas:
             cx.pack_start(self._linha_saida(rotulo, widget), False, False, 0)
-        nb.append_page(cx, Gtk.Label(label="Texto & Bits"))
+        sw_texto = Gtk.ScrolledWindow()
+        sw_texto.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        sw_texto.add(cx)
+        nb.append_page(sw_texto, Gtk.Label(label="Texto & Bits"))
 
         # Aba 2 — gráficos. TX mostra 2 (limpo/ruidoso); RX mostra 1 (recebido).
         self.figura = Figure(figsize=(6, 4), tight_layout=True)
