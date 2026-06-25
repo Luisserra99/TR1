@@ -178,31 +178,65 @@ componentes $I$ e $Q$ e escolhe o ponto da constelação de \emph{menor distânc
 
 \textbf{Cenário de teste:} Os testes são conduzidos com um efeito por vez, sempre será enviada a 
 palavra \textit{TR1!} para preservar o tamanho máximo de 40bits(3200 pontos no gráfico, pois para cada bit são usadas 100 amostras)
- fixado no gráfico da interface gráfica,
+fixado no gráfico da interface gráfica,
 assim facilitando a visualização da informação. Adicionalmente vale notar que na implementação a modulação
 por portadora tem predominância sobre a modulação digital.
 
 \begin{figure}[H]
-\centering
-\begin{subfigure}{0.32\textwidth}\centering\placeholdergrafico{3cm}{NRZ-Polar}\caption{NRZ-Polar}\end{subfigure}\hfill
-\begin{subfigure}{0.32\textwidth}\centering\placeholdergrafico{3cm}{Manchester}\caption{Manchester}\end{subfigure}\hfill
-\begin{subfigure}{0.32\textwidth}\centering\placeholdergrafico{3cm}{Bipolar/AMI}\caption{Bipolar (AMI)}\end{subfigure}
-\caption{Sinais das modulações digitais (banda-base).}
-\label{fig:digitais}
+\centering\includegraphics[width=\textwidth]{img/NRZ.png}
+\caption{Sinal da modulação digital NRZ-Polar (banda-base).}
+\label{fig:nrz}
 \end{figure}
 
 \begin{figure}[H]
-\centering
-\begin{subfigure}{0.32\textwidth}\centering\placeholdergrafico{2.6cm}{ASK}\caption{ASK}\end{subfigure}\hfill
-\begin{subfigure}{0.32\textwidth}\centering\placeholdergrafico{2.6cm}{FSK}\caption{FSK}\end{subfigure}\hfill
-\begin{subfigure}{0.32\textwidth}\centering\placeholdergrafico{2.6cm}{PSK}\caption{PSK}\end{subfigure}
+\centering\includegraphics[width=\textwidth]{img/manchester.png}
+\caption{Sinal da modulação digital Manchester (banda-base).}
+\label{fig:manchester}
+\end{figure}
 
-\vspace{4pt}
-\begin{subfigure}{0.32\textwidth}\centering\placeholdergrafico{2.6cm}{QPSK}\caption{QPSK}\end{subfigure}\hfill
-\begin{subfigure}{0.32\textwidth}\centering\placeholdergrafico{2.6cm}{16-QAM}\caption{16-QAM}\end{subfigure}\hfill
-\begin{subfigure}{0.32\textwidth}\centering\end{subfigure}
-\caption{Sinais das modulações por portadora.}
-\label{fig:portadoras}
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{img/bipolar.png}
+\caption{Sinal da modulação digital Bipolar (banda-base).}
+\label{fig:bipolar}
+\end{figure}
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{img/ASK.png}
+\caption{Sinal da modulação por portadora ASK.}
+\label{fig:ask}
+\end{figure}
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{img/FSK.png}
+\caption{Sinal da modulação por portadora FSK.}
+\label{fig:fsk}
+\end{figure}
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{img/PSK.png}
+\caption{Sinal da modulação por portadora PSK.}
+\label{fig:psk}
+\end{figure}
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{img/QPSK.png}
+\caption{Sinal da modulação por portadora QPSK.}
+\label{fig:qpsk}
+\end{figure}
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{img/16QAM.png}
+\caption{Sinal da modulação por portadora 16-QAM.}
+\label{fig:16qam}
+\end{figure}
+
+Para o QPSK cada portadora carrega 2bits, logo o gráfico contem a metade do número de amostras e para o 16-QAM, carrega 4bits,
+assim são usados um quarto do número de amostras. Na sequência segue o exemplo com ruído
+
+\begin{figure}
+    \centering \includegraphics[width=\textwidth]{img/portadora_ruido.png}
+    \caption{Portadora com Ruído: 16-QAM, $\mu = 1$, $\sigma=0.5$}
+    \label{fig:portadora_ruido}
 \end{figure}
 
 \subsection{Camada de Enlace}
@@ -223,11 +257,36 @@ implementados:
     potência de 2; no RX, a síndrome localiza e corrige 1 bit invertido por quadro.
 \end{itemize}
 
+
+\textbf{Cenário de teste:} Foi alterado o número de amostras para 1 de forma a ficar visível o número de bits do quadro.
+Valor de bits por quadro foi fixado em 8. 
+Além disso, será transmitido apenas o caractere "T" por simplicidade "01010100". 
+
 \begin{figure}[H]
 \centering
-\begin{subfigure}{0.48\textwidth}\centering\placeholdergrafico{3.2cm}{TX limpo vs RX com ruído --- Hamming corrige 1 bit/quadro}\caption{Hamming: corrige o erro (EDC \checkmark).}\end{subfigure}\hfill
-\begin{subfigure}{0.48\textwidth}\centering\placeholdergrafico{3.2cm}{TX limpo vs RX com ruído --- CRC-32 acusa erro}\caption{CRC-32: detecta o erro (EDC \texttimes).}\end{subfigure}
-\caption{Demonstração de detecção \emph{vs.} correção de erros sob ruído.}
+\includegraphics[width=\textwidth]{img/contagem.png}
+\caption{Enquadramento por contagem de caracteres - cabeçalho de 16 bits + payload}
+\label{fig:enq-contagem}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{img/insertbytes.png}
+\caption{Enquadramento por inserção de bytes}
+\label{fig:enq-bytes}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{img/insertbits.png}
+\caption{Enquadramento por inserção de bits}
+\label{fig:enq-bits}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{img/detecao_paridade.png}
+\caption{Demonstração de detecção de erro por paridade}
 \label{fig:enlace}
 \end{figure}
 
