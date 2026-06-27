@@ -36,8 +36,6 @@ def iniciar_transmissao(mensagem: str, configuracoes: dict):
     for i, payload in enumerate(payloads):
         
         # 2.1 - Detecção e Correção de Erros
-        # Se algum algoritmo (ex: Checksum) exigir um tamanho múltiplo específico,
-        # você pode usar o utilis.adicionar_padding(payload, multiplo) dentro dessa função.
         k_checksum = configuracoes.get('tamanho_checksum', CamadaEnlace.TAMANHO_CHECKSUM_BITS)
         bits_com_edc = CamadaEnlace.adicionar_controle_erro(payload, configuracoes['tipo_edc'], k_checksum)
         
