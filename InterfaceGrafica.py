@@ -27,7 +27,7 @@ from gi.repository import Gtk, GLib         # Gtk = widgets; GLib = volta p/ a t
 
 # Matplotlib embarcado no GTK (sem pyplot): Figure desenha; FigureCanvas vira um widget GTK.
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_gtk3cairo import FigureCanvasGTK3Cairo as FigureCanvas
+from matplotlib.backends.backend_gtk3agg import FigureCanvasGTK3Agg as FigureCanvas
 
 # Backend do simulador (camadas já implementadas).
 import utils
@@ -95,14 +95,8 @@ class JanelaSimulador(Gtk.Window):
         self.set_default_size(1000, 550)
         self.set_border_width(8)
 
-        # Aumenta a fonte de toda a interface
-        css = Gtk.CssProvider()
-        css.load_from_data(b"* { font-size: 18pt; }")
-        Gtk.StyleContext.add_provider_for_screen(
-            self.get_screen(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-
         # Layout: painel de configuração à esquerda, painel de saídas à direita.
-        raiz = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
+        raiz = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         self.add(raiz)
         raiz.pack_start(self._painel_config(), False, False, 0)
         raiz.pack_start(self._painel_saidas(), True, True, 0)
@@ -133,8 +127,8 @@ class JanelaSimulador(Gtk.Window):
         self.cmb_edc = self._combo(EDCS)
         self.cmb_dig = self._combo(DIGITAIS)
         self.cmb_por = self._combo(PORTADORAS)
-        self.spin_x = Gtk.SpinButton.new_with_range(-10.0, 10.0, 0.05)     # ruído: média
-        self.spin_sigma = Gtk.SpinButton.new_with_range(0.0, 10.0, 0.05)  # ruído: desvio
+        self.spin_x = Gtk.SpinButton.new_with_range(-2.0, 2.0, 0.05)     # ruído: média
+        self.spin_sigma = Gtk.SpinButton.new_with_range(0.0, 3.0, 0.05)  # ruído: desvio
         self.spin_x.set_digits(2)
         self.spin_sigma.set_digits(2)
         self.spin_x.set_value(0.0)
@@ -202,10 +196,7 @@ class JanelaSimulador(Gtk.Window):
                       ("Status EDC:", self.lbl_edc)]
         for rotulo, widget in linhas:
             cx.pack_start(self._linha_saida(rotulo, widget), False, False, 0)
-        sw_texto = Gtk.ScrolledWindow()
-        sw_texto.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-        sw_texto.add(cx)
-        nb.append_page(sw_texto, Gtk.Label(label="Texto & Bits"))
+        nb.append_page(cx, Gtk.Label(label="Texto & Bits"))
 
         # Aba 2 — gráficos. TX mostra 2 (limpo/ruidoso); RX mostra 1 (recebido).
         self.figura = Figure(figsize=(6, 4), tight_layout=True)
@@ -253,8 +244,6 @@ class JanelaSimulador(Gtk.Window):
         """RX: mostra nos menus a configuração que veio do TX (apenas informativo)."""
         self.spin_quadro.set_value(cfg.get("tamanho_maximo_quadro", 64))
         self.spin_k.set_value(cfg.get("tamanho_checksum", 8))
-        self.spin_x.set_value(cfg.get("ruido_media", 0.0))
-        self.spin_sigma.set_value(cfg.get("ruido_desvio", 0.10))
         for combo, itens, chave in (
             (self.cmb_enq, ENQUADRAMENTOS, "tipo_enquadramento"),
             (self.cmb_edc, EDCS, "tipo_edc"),
@@ -274,9 +263,9 @@ class JanelaSimulador(Gtk.Window):
         """Desenha os primeiros ~40 bits do sinal (o sinal inteiro é grande demais)."""
         ax.clear()
         n = min(len(sinal), 40 * CamadaFisica.AMOSTRAS_POR_BIT)
-        ax.plot(sinal[:n], linewidth=2)
-        ax.set_title(titulo, fontsize=22)
-        ax.set_ylabel("V/W", fontsize=22)
+        ax.plot(sinal[:n], linewidth=0.8)
+        ax.set_title(titulo)
+        ax.set_ylabel("V/W")
         ax.grid(True)
 
     def _status(self, texto):
