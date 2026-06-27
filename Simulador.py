@@ -29,14 +29,14 @@ def simular(mensagem, config):
 # Execução direta para teste rápido sem GUI
 if __name__ == '__main__':
     config_teste = {
-        'tipo_edc'           : 'Hamming',
+        'tipo_edc'           : 'Checksum',
         'tipo_enquadramento' : 'Inserção de bytes',
-        'tamanho_maximo_quadro': 32,
+        'tamanho_maximo_quadro': 16,
         'tamanho_checksum'   : 16,
         'tipo_modulacao_digital'   : 'nenhum',
-        'tipo_modulacao_analogica' : 'ASK',
-        'ruido_media'   : 0.0,
-        'ruido_desvio'  : 0.0,
+        'tipo_modulacao_analogica' : 'QPSK',
+        'ruido_media'   : 1.0,
+        'ruido_desvio'  : 3.0,
     }
 
     texto = input('Mensagem a transmitir: ').strip()

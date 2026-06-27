@@ -1,0 +1,11 @@
+\begin{thebibliography}{1}
+
+\bibitem{matplotlib}
+John~D. Hunter and {The Matplotlib Development Team}.
+\newblock {\em {Matplotlib: Visualization with Python --- Documentation}}, 2024.
+
+\bibitem{numpy}
+{The NumPy Community}.
+\newblock {\em {NumPy Documentation}}, 2024.
+
+\end{thebibliography}
